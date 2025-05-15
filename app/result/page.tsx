@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { getRecommendation } from "@/lib/recommendation"
-
-export default function ResultPage() {
+import ResultPage from "../result-page"
+export default function Page() {
   const searchParams = useSearchParams()
 
   // Extract form data from query parameters
@@ -85,33 +85,7 @@ export default function ResultPage() {
   })
 
   return (
-    <main className="container mx-auto py-8 px-4">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Hasil Rekomendasi</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-xl font-medium">
-              Halo, <span className="font-bold">{formData.namaLengkap}!</span>
-            </h2>
-            <p className="text-gray-500 mt-1">
-              {formData.umur} tahun, {formData.jenisKelamin} dari {formData.kotaAsal}
-            </p>
-          </div>
-
-          <div className="bg-slate-100 p-6 rounded-lg text-center">
-            <h3 className="text-lg font-medium mb-2">Rekomendasi jurusan kamu:</h3>
-            <p className="text-2xl font-bold text-primary">{recommendation}</p>
-          </div>
-
-          <div className="flex justify-center mt-6">
-            <Link href="/">
-              <Button>Kembali ke Formulir</Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </main>
+    <ResultPage/>
+    
   )
 }
