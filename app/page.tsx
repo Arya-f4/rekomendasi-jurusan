@@ -82,6 +82,16 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("personal")
   const [selectedInterests, setSelectedInterests] = useState<string[]>([])
   const [visibleAcademicFields, setVisibleAcademicFields] = useState<string[]>([])
+  const [currentQuestion, setCurrentQuestion] = useState(0)
+  const [questions, setQuestions] = useState<
+    Array<{
+      id: string
+      question: string
+      type: string
+      options?: Array<{ value: string; label: string }>
+      field: string
+    }>
+  >([])
 
   // Update visible academic fields based on selected interests
   useEffect(() => {
@@ -229,6 +239,182 @@ export default function Home() {
     }))
   }
 
+  const generateQuestions = () => {
+    const newQuestions: Array<{
+      id: string
+      question: string
+      type: string
+      options?: Array<{ value: string; label: string }>
+      field: string
+    }> = []
+
+    // Academic questions based on selected interests
+    if (selectedInterests.includes("minatSains") || selectedInterests.includes("minatTeknologi")) {
+      newQuestions.push({
+        id: "nilaiMatematika",
+        question: "Berapa nilai rata-rata Matematika kamu?",
+        type: "number",
+        field: "nilaiMatematika",
+      })
+      newQuestions.push({
+        id: "nilaiFisika",
+        question: "Berapa nilai rata-rata Fisika kamu?",
+        type: "number",
+        field: "nilaiFisika",
+      })
+    }
+
+    if (selectedInterests.includes("minatKesehatan")) {
+      newQuestions.push({
+        id: "nilaiBiologi",
+        question: "Berapa nilai rata-rata Biologi kamu?",
+        type: "number",
+        field: "nilaiBiologi",
+      })
+      newQuestions.push({
+        id: "nilaiKimia",
+        question: "Berapa nilai rata-rata Kimia kamu?",
+        type: "number",
+        field: "nilaiKimia",
+      })
+    }
+
+    if (selectedInterests.includes("minatSosial") || selectedInterests.includes("minatDebat")) {
+      newQuestions.push({
+        id: "nilaiSosiologi",
+        question: "Berapa nilai rata-rata Sosiologi kamu?",
+        type: "number",
+        field: "nilaiSosiologi",
+      })
+      newQuestions.push({
+        id: "nilaiSejarah",
+        question: "Berapa nilai rata-rata Sejarah kamu?",
+        type: "number",
+        field: "nilaiSejarah",
+      })
+    }
+
+    if (selectedInterests.includes("minatBahasa")) {
+      newQuestions.push({
+        id: "nilaiBahasa",
+        question: "Berapa nilai rata-rata Bahasa kamu?",
+        type: "number",
+        field: "nilaiBahasa",
+      })
+    }
+
+    if (selectedInterests.includes("minatSeni")) {
+      newQuestions.push({
+        id: "nilaiSeni",
+        question: "Berapa nilai rata-rata Seni kamu?",
+        type: "number",
+        field: "nilaiSeni",
+      })
+    }
+
+    if (selectedInterests.includes("minatKeuangan")) {
+      newQuestions.push({
+        id: "nilaiEkonomi",
+        question: "Berapa nilai rata-rata Ekonomi kamu?",
+        type: "number",
+        field: "nilaiEkonomi",
+      })
+    }
+
+    // Skill questions
+    newQuestions.push({
+      id: "kemampuanAnalitis",
+      question: "Bagaimana kemampuan analitis kamu?",
+      type: "select",
+      options: [
+        { value: "baik", label: "Baik" },
+        { value: "sedang", label: "Sedang" },
+        { value: "kurang", label: "Kurang" },
+      ],
+      field: "kemampuanAnalitis",
+    })
+
+    newQuestions.push({
+      id: "kemampuanKomunikasi",
+      question: "Bagaimana kemampuan komunikasi kamu?",
+      type: "select",
+      options: [
+        { value: "baik", label: "Baik" },
+        { value: "sedang", label: "Sedang" },
+        { value: "kurang", label: "Kurang" },
+      ],
+      field: "kemampuanKomunikasi",
+    })
+
+    newQuestions.push({
+      id: "kemampuanKreativitas",
+      question: "Bagaimana kemampuan kreativitas kamu?",
+      type: "select",
+      options: [
+        { value: "baik", label: "Baik" },
+        { value: "sedang", label: "Sedang" },
+        { value: "kurang", label: "Kurang" },
+      ],
+      field: "kemampuanKreativitas",
+    })
+
+    newQuestions.push({
+      id: "kemampuanKetelitian",
+      question: "Bagaimana kemampuan ketelitian kamu?",
+      type: "select",
+      options: [
+        { value: "baik", label: "Baik" },
+        { value: "sedang", label: "Sedang" },
+        { value: "kurang", label: "Kurang" },
+      ],
+      field: "kemampuanKetelitian",
+    })
+
+    newQuestions.push({
+      id: "kemampuanSpasial",
+      question: "Bagaimana kemampuan spasial kamu?",
+      type: "select",
+      options: [
+        { value: "baik", label: "Baik" },
+        { value: "sedang", label: "Sedang" },
+        { value: "kurang", label: "Kurang" },
+      ],
+      field: "kemampuanSpasial",
+    })
+
+    newQuestions.push({
+      id: "keterampilanTeknis",
+      question: "Bagaimana keterampilan teknis kamu?",
+      type: "select",
+      options: [
+        { value: "baik", label: "Baik" },
+        { value: "sedang", label: "Sedang" },
+        { value: "kurang", label: "Kurang" },
+      ],
+      field: "keterampilanTeknis",
+    })
+
+    setQuestions(newQuestions)
+    setCurrentQuestion(0)
+  }
+
+  const handleNextQuestion = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1)
+    }
+  }
+
+  const handlePrevQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1)
+    }
+  }
+
+  const handleQuestionChange = (value: string) => {
+    const currentField = questions[currentQuestion].field
+    handleChange(currentField, value)
+  }
+
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
   }
@@ -236,6 +422,7 @@ export default function Home() {
   const goToNextTab = () => {
     if (activeTab === "personal") {
       setActiveTab("academic")
+      generateQuestions()
     }
   }
 
@@ -452,135 +639,98 @@ export default function Home() {
               <TabsContent value="academic" className="space-y-6" id="academic-tab">
                 {selectedInterests.length > 0 ? (
                   <>
-                    <h3 className="text-lg font-medium">Nilai Akademik</h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      Masukkan nilai rata-rata untuk mata pelajaran yang relevan dengan minat kamu (skala 0-100):
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {academicFields
-                        .filter((field) => visibleAcademicFields.includes(field.id))
-                        .map((field) => (
-                          <div key={field.id} className="space-y-2">
-                            <Label htmlFor={field.id}>{field.label}</Label>
-                            <Input
-                              id={field.id}
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={formData[field.id as keyof typeof formData] as string}
-                              onChange={(e) => handleChange(field.id, e.target.value)}
-                              placeholder="0-100"
-                              required
-                            />
+                    {questions.length > 0 ? (
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-medium">
+                            Pertanyaan {currentQuestion + 1} dari {questions.length}
+                          </h3>
+                          <div className="text-sm text-muted-foreground">
+                            {Math.round(((currentQuestion + 1) / questions.length) * 100)}% selesai
                           </div>
-                        ))}
-                    </div>
+                        </div>
 
-                    {visibleAcademicFields.length === 0 && (
-                      <div className="p-4 bg-muted rounded-lg text-center">
-                        <p>Tidak ada mata pelajaran yang relevan dengan minat yang dipilih.</p>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-6">
+                          <div
+                            className="bg-primary h-2.5 rounded-full"
+                            style={{ width: `${Math.round(((currentQuestion + 1) / questions.length) * 100)}%` }}
+                          ></div>
+                        </div>
+
+                        <div className="p-6 border rounded-lg shadow-sm">
+                          <h4 className="text-xl font-medium mb-4">{questions[currentQuestion].question}</h4>
+
+                          {questions[currentQuestion].type === "number" ? (
+                            <div className="space-y-2">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={formData[questions[currentQuestion].field as keyof typeof formData] as string}
+                                onChange={(e) => handleQuestionChange(e.target.value)}
+                                placeholder="0-100"
+                                className="text-lg p-6"
+                                required
+                              />
+                              <p className="text-sm text-muted-foreground">Masukkan nilai antara 0-100</p>
+                            </div>
+                          ) : questions[currentQuestion].type === "select" ? (
+                            <div className="space-y-4">
+                              {questions[currentQuestion].options?.map((option) => (
+                                <div
+                                  key={option.value}
+                                  className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all ${
+                                    formData[questions[currentQuestion].field as keyof typeof formData] === option.value
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : "hover:bg-accent"
+                                  }`}
+                                  onClick={() => handleQuestionChange(option.value)}
+                                >
+                                  <span className="text-lg">{option.label}</span>
+                                  {formData[questions[currentQuestion].field as keyof typeof formData] ===
+                                    option.value && <Check className="h-5 w-5 ml-auto" />}
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div className="flex justify-between mt-6">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handlePrevQuestion}
+                            disabled={currentQuestion === 0}
+                          >
+                            Sebelumnya
+                          </Button>
+
+                          {currentQuestion < questions.length - 1 ? (
+                            <Button
+                              type="button"
+                              onClick={handleNextQuestion}
+                              disabled={!formData[questions[currentQuestion].field as keyof typeof formData]}
+                            >
+                              Selanjutnya
+                            </Button>
+                          ) : (
+                            <Button
+                              type="submit"
+                              disabled={!formData[questions[currentQuestion].field as keyof typeof formData]}
+                            >
+                              Lihat Rekomendasi
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-64">
+                        <div className="text-center">
+                          <h3 className="text-lg font-medium mb-2">Memuat pertanyaan...</h3>
+                          <p className="text-muted-foreground">Mohon tunggu sebentar</p>
+                        </div>
                       </div>
                     )}
-
-                    <h3 className="text-lg font-medium pt-4">Kemampuan dan Keterampilan</h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      Pilih tingkat kemampuan untuk setiap keterampilan berikut:
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="kemampuanAnalitis">Kemampuan Analitis</Label>
-                        <Select onValueChange={(value) => handleChange("kemampuanAnalitis", value)} required>
-                          <SelectTrigger id="kemampuanAnalitis">
-                            <SelectValue placeholder="Pilih tingkat kemampuan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="baik">Baik</SelectItem>
-                            <SelectItem value="sedang">Sedang</SelectItem>
-                            <SelectItem value="kurang">Kurang</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="kemampuanKomunikasi">Kemampuan Komunikasi</Label>
-                        <Select onValueChange={(value) => handleChange("kemampuanKomunikasi", value)} required>
-                          <SelectTrigger id="kemampuanKomunikasi">
-                            <SelectValue placeholder="Pilih tingkat kemampuan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="baik">Baik</SelectItem>
-                            <SelectItem value="sedang">Sedang</SelectItem>
-                            <SelectItem value="kurang">Kurang</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="kemampuanKreativitas">Kemampuan Kreativitas</Label>
-                        <Select onValueChange={(value) => handleChange("kemampuanKreativitas", value)} required>
-                          <SelectTrigger id="kemampuanKreativitas">
-                            <SelectValue placeholder="Pilih tingkat kemampuan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="baik">Baik</SelectItem>
-                            <SelectItem value="sedang">Sedang</SelectItem>
-                            <SelectItem value="kurang">Kurang</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="kemampuanKetelitian">Kemampuan Ketelitian</Label>
-                        <Select onValueChange={(value) => handleChange("kemampuanKetelitian", value)} required>
-                          <SelectTrigger id="kemampuanKetelitian">
-                            <SelectValue placeholder="Pilih tingkat kemampuan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="baik">Baik</SelectItem>
-                            <SelectItem value="sedang">Sedang</SelectItem>
-                            <SelectItem value="kurang">Kurang</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="kemampuanSpasial">Kemampuan Spasial</Label>
-                        <Select onValueChange={(value) => handleChange("kemampuanSpasial", value)} required>
-                          <SelectTrigger id="kemampuanSpasial">
-                            <SelectValue placeholder="Pilih tingkat kemampuan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="baik">Baik</SelectItem>
-                            <SelectItem value="sedang">Sedang</SelectItem>
-                            <SelectItem value="kurang">Kurang</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="keterampilanTeknis">Keterampilan Teknis</Label>
-                        <Select onValueChange={(value) => handleChange("keterampilanTeknis", value)} required>
-                          <SelectTrigger id="keterampilanTeknis">
-                            <SelectValue placeholder="Pilih tingkat keterampilan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="baik">Baik</SelectItem>
-                            <SelectItem value="sedang">Sedang</SelectItem>
-                            <SelectItem value="kurang">Kurang</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <Button type="submit" className="w-full mt-6">
-                      Lihat Rekomendasi
-                    </Button>
                   </>
                 ) : (
                   <div className="p-8 text-center bg-muted rounded-lg">
