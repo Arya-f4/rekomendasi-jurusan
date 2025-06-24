@@ -1,751 +1,323 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+import { Button } from "@/components/ui/button";
 import {
-  Check,
-  FlaskRoundIcon as Flask,
-  HeartPulse,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  ArrowLeft, ArrowRight,
+  BadgeCheck,
+  Brain,
+  BrainCircuit,
+  Briefcase,
+  Building,
   Code,
-  Users,
+  Drama,
+  Ear,
+  Eye,
+  GraduationCap,
+  Hand,
+  HeartPulse,
+  Laptop,
+  Lightbulb,
+  Paintbrush,
+  PencilRuler,
   Scale,
-  Palette,
-  Languages,
-  LineChart,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+  ShieldCheck, SmilePlus,
+  Sun,
+  Target,
+  User,
+  Users,
+  Users2,
+  Wand2
+} from "lucide-react";
+
+// --- Data untuk Pilihan dengan Ikon ---
+
+const minatItems = [
+  { id: "teknologi", label: "Teknologi & Pemrograman", icon: <Code className="h-5 w-5" /> },
+  { id: "bisnis", label: "Bisnis & Manajemen", icon: <Briefcase className="h-5 w-5" /> },
+  { id: "seni", label: "Seni & Desain", icon: <Paintbrush className="h-5 w-5" /> },
+  { id: "kesehatan", label: "Kesehatan & Sains", icon: <HeartPulse className="h-5 w-5" /> },
+  { id: "sosial", label: "Sosial & Hukum", icon: <Scale className="h-5 w-5" /> },
+  { id: "analisis", label: "Analisis & Riset", icon: <BrainCircuit className="h-5 w-5" /> },
+];
+
+const kemampuanItems = [
+  { id: "pemecahan_masalah", label: "Pemecahan Masalah", icon: <Lightbulb className="h-5 w-5" /> },
+  { id: "berpikir_kritis", label: "Berpikir Kritis", icon: <BrainCircuit className="h-5 w-5" /> },
+  { id: "kreativitas", label: "Kreativitas", icon: <Wand2 className="h-5 w-5" /> },
+  { id: "komunikasi", label: "Komunikasi", icon: <Users className="h-5 w-5" /> },
+  { id: "manajerial", label: "Manajemen & Kepemimpinan", icon: <Target className="h-5 w-5" /> },
+  { id: "ketelitian", label: "Ketelitian & Detail", icon: <PencilRuler className="h-5 w-5" /> },
+];
+
+const karakterItems = [
+  { id: "analitis", label: "Analitis", icon: <BrainCircuit className="h-5 w-5" /> },
+  { id: "kreatif", label: "Kreatif", icon: <Wand2 className="h-5 w-5" /> },
+  { id: "pemimpin", label: "Berjiwa Pemimpin", icon: <Users className="h-5 w-5" /> },
+  { id: "terorganisir", label: "Terorganisir", icon: <Briefcase className="h-5 w-5" /> },
+  { id: "tekun", label: "Tekun & Gigih", icon: <BadgeCheck className="h-5 w-5" /> },
+  { id: "empatik", label: "Empatik", icon: <SmilePlus className="h-5 w-5" /> },
+];
+
+const FormSchema = z.object({
+  name: z.string().min(2, { message: "Nama harus diisi minimal 2 karakter." }),
+  school: z.string().min(2, { message: "Asal sekolah harus diisi minimal 2 karakter." }),
+  minat: z.array(z.string()).refine((value) => value.some((item) => item), {
+    message: "Anda harus memilih setidaknya satu minat.",
+  }),
+  kemampuan: z.array(z.string()).refine((value) => value.some((item) => item), {
+    message: "Anda harus memilih setidaknya satu kemampuan.",
+  }),
+  nilai_matematika: z.coerce.number().min(0).max(100),
+  nilai_fisika: z.coerce.number().min(0).max(100),
+  nilai_biologi: z.coerce.number().min(0).max(100),
+  nilai_ekonomi: z.coerce.number().min(0).max(100),
+  nilai_sosiologi: z.coerce.number().min(0).max(100),
+  nilai_sejarah: z.coerce.number().min(0).max(100),
+  nilai_seni: z.coerce.number().min(0).max(100),
+  nilai_bahasa_indonesia: z.coerce.number().min(0).max(100),
+  nilai_bahasa_inggris: z.coerce.number().min(0).max(100),
+  lingkungan_kerja: z.string({
+    required_error: "Anda harus memilih lingkungan kerja.",
+  }),
+  gaya_belajar: z.string({
+    required_error: "Anda harus memilih gaya belajar.",
+  }),
+  karakter: z.array(z.string()).refine((value) => value.some((item) => item), {
+    message: "Anda harus memilih setidaknya satu karakter.",
+  }),
+});
+
+type FormSchemaType = z.infer<typeof FormSchema>;
+
+const steps = [
+    { id: 1, title: 'Identitas Diri', icon: <User className="h-6 w-6" /> },
+    { id: 2, title: 'Minat & Kemampuan', icon: <Lightbulb className="h-6 w-6" /> },
+    { id: 3, title: 'Nilai Akademik', icon: <GraduationCap className="h-6 w-6" /> },
+    { id: 4, title: 'Preferensi & Karakter', icon: <Users2 className="h-6 w-6" /> },
+];
+const stepFields = [
+    ['name', 'school'],
+    ['minat', 'kemampuan'],
+    Object.keys(FormSchema.shape).filter(key => key.startsWith('nilai_')),
+    ['lingkungan_kerja', 'gaya_belajar', 'karakter'],
+];
 
 export default function Home() {
-  const router = useRouter()
-  const [formData, setFormData] = useState({
-    // Personal Data
-    namaLengkap: "",
-    umur: "",
-    jenisKelamin: "",
-    sekolahAsal: "",
-    kotaAsal: "",
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(0);
 
-    // Study Interests
-    minatSains: "",
-    minatTeknologi: "",
-    minatSosial: "",
-    minatHukum: "",
-    minatKesehatan: "",
-    minatSeni: "",
-    minatBahasa: "",
-    minatKeuangan: "",
-    minatMatematika: "",
-    minatDesain: "",
-    minatDebat: "",
+  const form = useForm<FormSchemaType>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      name: "",
+      school: "",
+      minat: [],
+      kemampuan: [],
+      nilai_matematika: 80,
+      nilai_fisika: 80,
+      nilai_biologi: 80,
+      nilai_ekonomi: 80,
+      nilai_sosiologi: 80,
+      nilai_sejarah: 80,
+      nilai_seni: 80,
+      nilai_bahasa_indonesia: 80,
+      nilai_bahasa_inggris: 80,
+      karakter: [],
+    },
+  });
 
-    // Academic Scores
-    nilaiMatematika: "",
-    nilaiFisika: "",
-    nilaiBiologi: "",
-    nilaiKimia: "",
-    nilaiBahasa: "",
-    nilaiSejarah: "",
-    nilaiSosiologi: "",
-    nilaiEkonomi: "",
-    nilaiSeni: "",
+  const handleNext = async () => {
+    const fields = stepFields[currentStep];
+    const output = await form.trigger(fields as (keyof FormSchemaType)[], { shouldFocus: true });
+    if (!output) return;
+    if (currentStep < steps.length - 1) {
+        setCurrentStep(step => step + 1);
+    }
+  };
 
-    // Skills
-    kemampuanAnalitis: "",
-    kemampuanKomunikasi: "",
-    kemampuanKreativitas: "",
-    kemampuanKetelitian: "",
-    kemampuanSpasial: "",
-    kemampuanMemori: "",
-    keterampilanTeknis: "",
-    kemampuanProblemSolving: "",
-
-    // Job Preference
-    preferensiPekerjaan: "",
-  })
-
-  const [completedSteps, setCompletedSteps] = useState({
-    personalData: false,
-    interests: false,
-    academics: false,
-    skills: false,
-    preferences: false,
-  })
-
-  const [activeTab, setActiveTab] = useState("personal")
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
-  const [visibleAcademicFields, setVisibleAcademicFields] = useState<string[]>([])
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [questions, setQuestions] = useState<
-    Array<{
-      id: string
-      question: string
-      type: string
-      options?: Array<{ value: string; label: string }>
-      field: string
-    }>
-  >([])
-
-  // Update visible academic fields based on selected interests
-  useEffect(() => {
-    const fieldsToShow = new Set<string>()
-
-    selectedInterests.forEach((interest) => {
-      switch (interest) {
-        case "minatSains":
-          fieldsToShow.add("nilaiMatematika")
-          fieldsToShow.add("nilaiFisika")
-          break
-        case "minatTeknologi":
-          fieldsToShow.add("nilaiMatematika")
-          fieldsToShow.add("nilaiFisika")
-          break
-        case "minatSosial":
-          fieldsToShow.add("nilaiSosiologi")
-          fieldsToShow.add("nilaiSejarah")
-          break
-        case "minatDebat":
-          fieldsToShow.add("nilaiSejarah")
-          fieldsToShow.add("nilaiBahasa")
-          break
-        case "minatKesehatan":
-          fieldsToShow.add("nilaiBiologi")
-          fieldsToShow.add("nilaiKimia")
-          break
-        case "minatSeni":
-          fieldsToShow.add("nilaiSeni")
-          break
-        case "minatBahasa":
-          fieldsToShow.add("nilaiBahasa")
-          break
-        case "minatKeuangan":
-          fieldsToShow.add("nilaiEkonomi")
-          fieldsToShow.add("nilaiMatematika")
-          break
+  const handlePrev = () => {
+      if (currentStep > 0) {
+          setCurrentStep(step => step - 1);
       }
-    })
+  };
 
-    setVisibleAcademicFields(Array.from(fieldsToShow))
-  }, [selectedInterests])
-
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => {
-      const newData = { ...prev, [field]: value }
-      return newData
-    })
-
-    // Update completed steps based on filled fields
-    updateCompletedSteps()
-  }
-
-  const handleInterestToggle = (interest: string) => {
-    setSelectedInterests((prev) => {
-      // Check if interest is already selected
-      if (prev.includes(interest)) {
-        // Remove interest
-        return prev.filter((item) => item !== interest)
+  function onSubmit(data: FormSchemaType) {
+    const params = new URLSearchParams();
+    Object.entries(data).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        params.append(key, value.join(","));
       } else {
-        // Add interest
-        return [...prev, interest]
+        params.append(key, String(value));
       }
-    })
-
-    // Set the interest value to "tinggi" if selected, or empty if deselected
-    const value = selectedInterests.includes(interest) ? "" : "tinggi"
-
-    setFormData((prev) => {
-      const newData = { ...prev, [interest]: value }
-
-      // If interest is being selected (value is "tinggi"), update related fields
-      if (value === "tinggi") {
-        switch (interest) {
-          case "minatSains":
-            // If science interest is high, update related fields
-            if (newData.nilaiMatematika === "") newData.nilaiMatematika = "75"
-            if (newData.nilaiFisika === "") newData.nilaiFisika = "75"
-            if (newData.kemampuanAnalitis === "") newData.kemampuanAnalitis = "baik"
-            break
-          case "minatTeknologi":
-            // If technology interest is high, update related fields
-            if (newData.keterampilanTeknis === "") newData.keterampilanTeknis = "baik"
-            if (newData.preferensiPekerjaan === "") newData.preferensiPekerjaan = "Teknis"
-            break
-          case "minatSosial":
-            // If social interest is high, update related fields
-            if (newData.nilaiSosiologi === "") newData.nilaiSosiologi = "75"
-            if (newData.kemampuanKomunikasi === "") newData.kemampuanKomunikasi = "baik"
-            break
-          case "minatKesehatan":
-            // If health interest is high, update related fields
-            if (newData.nilaiBiologi === "") newData.nilaiBiologi = "75"
-            if (newData.nilaiKimia === "") newData.nilaiKimia = "75"
-            if (newData.preferensiPekerjaan === "") newData.preferensiPekerjaan = "Pelayanan Masyarakat"
-            break
-          case "minatSeni":
-            // If art interest is high, update related fields
-            if (newData.nilaiSeni === "") newData.nilaiSeni = "75"
-            if (newData.kemampuanKreativitas === "") newData.kemampuanKreativitas = "baik"
-            break
-          case "minatBahasa":
-            // If language interest is high, update related fields
-            if (newData.nilaiBahasa === "") newData.nilaiBahasa = "75"
-            if (newData.kemampuanKomunikasi === "") newData.kemampuanKomunikasi = "baik"
-            break
-          case "minatKeuangan":
-            // If finance interest is high, update related fields
-            if (newData.nilaiEkonomi === "") newData.nilaiEkonomi = "75"
-            if (newData.nilaiMatematika === "") newData.nilaiMatematika = "75"
-            if (newData.preferensiPekerjaan === "") newData.preferensiPekerjaan = "Administratif"
-            break
-          case "minatDebat":
-            // If debate interest is high, update related fields
-            if (newData.kemampuanKomunikasi === "") newData.kemampuanKomunikasi = "baik"
-            if (newData.nilaiSejarah === "") newData.nilaiSejarah = "75"
-            break
-        }
-      }
-
-      return newData
-    })
-
-    // Update completed steps
-    updateCompletedSteps()
+    });
+    router.push(`/result?${params.toString()}`);
   }
 
-  const updateCompletedSteps = () => {
-    const personalFields = ["namaLengkap", "umur", "jenisKelamin", "sekolahAsal", "kotaAsal"]
-
-    // Check if personal data is complete
-    const personalComplete = personalFields.every((field) => formData[field as keyof typeof formData] !== "")
-
-    // Check if at least 1 interest is selected
-    const interestsComplete = selectedInterests.length >= 1
-
-    // Check if job preference is selected
-    const preferenceComplete = formData.preferensiPekerjaan !== ""
-
-    setCompletedSteps((prev) => ({
-      ...prev,
-      personalData: personalComplete,
-      interests: interestsComplete,
-      preferences: preferenceComplete,
-    }))
-  }
-
-  const generateQuestions = () => {
-    const newQuestions: Array<{
-      id: string
-      question: string
-      type: string
-      options?: Array<{ value: string; label: string }>
-      field: string
-    }> = []
-
-    // Academic questions based on selected interests
-    if (selectedInterests.includes("minatSains") || selectedInterests.includes("minatTeknologi")) {
-      newQuestions.push({
-        id: "nilaiMatematika",
-        question: "Berapa nilai rata-rata Matematika kamu?",
-        type: "number",
-        field: "nilaiMatematika",
-      })
-      newQuestions.push({
-        id: "nilaiFisika",
-        question: "Berapa nilai rata-rata Fisika kamu?",
-        type: "number",
-        field: "nilaiFisika",
-      })
-    }
-
-    if (selectedInterests.includes("minatKesehatan")) {
-      newQuestions.push({
-        id: "nilaiBiologi",
-        question: "Berapa nilai rata-rata Biologi kamu?",
-        type: "number",
-        field: "nilaiBiologi",
-      })
-      newQuestions.push({
-        id: "nilaiKimia",
-        question: "Berapa nilai rata-rata Kimia kamu?",
-        type: "number",
-        field: "nilaiKimia",
-      })
-    }
-
-    if (selectedInterests.includes("minatSosial") || selectedInterests.includes("minatDebat")) {
-      newQuestions.push({
-        id: "nilaiSosiologi",
-        question: "Berapa nilai rata-rata Sosiologi kamu?",
-        type: "number",
-        field: "nilaiSosiologi",
-      })
-      newQuestions.push({
-        id: "nilaiSejarah",
-        question: "Berapa nilai rata-rata Sejarah kamu?",
-        type: "number",
-        field: "nilaiSejarah",
-      })
-    }
-
-    if (selectedInterests.includes("minatBahasa")) {
-      newQuestions.push({
-        id: "nilaiBahasa",
-        question: "Berapa nilai rata-rata Bahasa kamu?",
-        type: "number",
-        field: "nilaiBahasa",
-      })
-    }
-
-    if (selectedInterests.includes("minatSeni")) {
-      newQuestions.push({
-        id: "nilaiSeni",
-        question: "Berapa nilai rata-rata Seni kamu?",
-        type: "number",
-        field: "nilaiSeni",
-      })
-    }
-
-    if (selectedInterests.includes("minatKeuangan")) {
-      newQuestions.push({
-        id: "nilaiEkonomi",
-        question: "Berapa nilai rata-rata Ekonomi kamu?",
-        type: "number",
-        field: "nilaiEkonomi",
-      })
-    }
-
-    // Skill questions
-    newQuestions.push({
-      id: "kemampuanAnalitis",
-      question: "Bagaimana kemampuan analitis kamu?",
-      type: "select",
-      options: [
-        { value: "baik", label: "Baik" },
-        { value: "sedang", label: "Sedang" },
-        { value: "kurang", label: "Kurang" },
-      ],
-      field: "kemampuanAnalitis",
-    })
-
-    newQuestions.push({
-      id: "kemampuanKomunikasi",
-      question: "Bagaimana kemampuan komunikasi kamu?",
-      type: "select",
-      options: [
-        { value: "baik", label: "Baik" },
-        { value: "sedang", label: "Sedang" },
-        { value: "kurang", label: "Kurang" },
-      ],
-      field: "kemampuanKomunikasi",
-    })
-
-    newQuestions.push({
-      id: "kemampuanKreativitas",
-      question: "Bagaimana kemampuan kreativitas kamu?",
-      type: "select",
-      options: [
-        { value: "baik", label: "Baik" },
-        { value: "sedang", label: "Sedang" },
-        { value: "kurang", label: "Kurang" },
-      ],
-      field: "kemampuanKreativitas",
-    })
-
-    newQuestions.push({
-      id: "kemampuanKetelitian",
-      question: "Bagaimana kemampuan ketelitian kamu?",
-      type: "select",
-      options: [
-        { value: "baik", label: "Baik" },
-        { value: "sedang", label: "Sedang" },
-        { value: "kurang", label: "Kurang" },
-      ],
-      field: "kemampuanKetelitian",
-    })
-
-    newQuestions.push({
-      id: "kemampuanSpasial",
-      question: "Bagaimana kemampuan spasial kamu?",
-      type: "select",
-      options: [
-        { value: "baik", label: "Baik" },
-        { value: "sedang", label: "Sedang" },
-        { value: "kurang", label: "Kurang" },
-      ],
-      field: "kemampuanSpasial",
-    })
-
-    newQuestions.push({
-      id: "keterampilanTeknis",
-      question: "Bagaimana keterampilan teknis kamu?",
-      type: "select",
-      options: [
-        { value: "baik", label: "Baik" },
-        { value: "sedang", label: "Sedang" },
-        { value: "kurang", label: "Kurang" },
-      ],
-      field: "keterampilanTeknis",
-    })
-
-    setQuestions(newQuestions)
-    setCurrentQuestion(0)
-  }
-
-  const handleNextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1)
-    }
-  }
-
-  const handlePrevQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1)
-    }
-  }
-
-  const handleQuestionChange = (value: string) => {
-    const currentField = questions[currentQuestion].field
-    handleChange(currentField, value)
-  }
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab)
-  }
-
-  const goToNextTab = () => {
-    if (activeTab === "personal") {
-      setActiveTab("academic")
-      generateQuestions()
-    }
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Create query string from form data
-    const queryParams = new URLSearchParams()
-    Object.entries(formData).forEach(([key, value]) => {
-      queryParams.append(key, value)
-    })
-
-    // Navigate to result page with query params
-    router.push(`/result?${queryParams.toString()}`)
-  }
-
-  // Interest cards data
-  const interestCards = [
-    { id: "minatSains", label: "Sains", icon: <Flask className="h-6 w-6" /> },
-    { id: "minatTeknologi", label: "Teknologi", icon: <Code className="h-6 w-6" /> },
-    { id: "minatSosial", label: "Sosial", icon: <Users className="h-6 w-6" /> },
-    { id: "minatDebat", label: "Debat", icon: <Scale className="h-6 w-6" /> },
-    { id: "minatKesehatan", label: "Kesehatan", icon: <HeartPulse className="h-6 w-6" /> },
-    { id: "minatSeni", label: "Seni", icon: <Palette className="h-6 w-6" /> },
-    { id: "minatBahasa", label: "Bahasa", icon: <Languages className="h-6 w-6" /> },
-    { id: "minatKeuangan", label: "Keuangan", icon: <LineChart className="h-6 w-6" /> },
-  ]
-
-  // Academic fields mapping
-  const academicFields = [
-    { id: "nilaiMatematika", label: "Nilai Matematika" },
-    { id: "nilaiFisika", label: "Nilai Fisika" },
-    { id: "nilaiBiologi", label: "Nilai Biologi" },
-    { id: "nilaiKimia", label: "Nilai Kimia" },
-    { id: "nilaiBahasa", label: "Nilai Bahasa" },
-    { id: "nilaiSejarah", label: "Nilai Sejarah" },
-    { id: "nilaiSosiologi", label: "Nilai Sosiologi" },
-    { id: "nilaiEkonomi", label: "Nilai Ekonomi" },
-    { id: "nilaiSeni", label: "Nilai Seni" },
-  ]
+  const cardVariants = {
+    hidden: { opacity: 0, x: -50 },
+    visible: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 50 },
+  };
 
   return (
-    <main className="container mx-auto py-8 px-4">
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Rekomendasi Jurusan Kuliah</CardTitle>
-          <CardDescription>Isi formulir berikut untuk mendapatkan rekomendasi jurusan kuliah</CardDescription>
-          <div className="flex justify-between mb-4">
-            <div
-              className={`flex items-center ${completedSteps.personalData ? "text-primary" : "text-muted-foreground"}`}
-            >
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 ${completedSteps.personalData ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-              >
-                1
-              </div>
-              <span className="text-sm">Data Pribadi</span>
+    <main className="container mx-auto px-4 py-8 max-w-3xl">
+       <div className="space-y-4 mb-8">
+            <Progress value={((currentStep + 1) / steps.length) * 100} />
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                {steps[currentStep].icon}
+                <span>Langkah {currentStep + 1} dari {steps.length}: <strong>{steps[currentStep].title}</strong></span>
             </div>
-            <div className={`flex items-center ${completedSteps.interests ? "text-primary" : "text-muted-foreground"}`}>
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 ${completedSteps.interests ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-              >
-                2
-              </div>
-              <span className="text-sm">Minat</span>
-            </div>
-            <div
-              className={`flex items-center ${completedSteps.preferences ? "text-primary" : "text-muted-foreground"}`}
-            >
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center mr-2 ${completedSteps.preferences ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-              >
-                3
-              </div>
-              <span className="text-sm">Preferensi</span>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="personal">Data Pribadi</TabsTrigger>
-                <TabsTrigger value="academic">Data Akademik</TabsTrigger>
-              </TabsList>
+        </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <AnimatePresence mode="wait">
+                 <motion.div
+                    key={currentStep}
+                    variants={cardVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    transition={{ duration: 0.3 }}
+                >
+            {currentStep === 0 && (
+                 <Card>
+                    <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />Identitas Diri</CardTitle>
+                    <CardDescription>Mari kita mulai dengan perkenalan singkat.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                    <FormField control={form.control} name="name" render={({ field }) => (
+                        <FormItem><FormLabel>Nama Lengkap</FormLabel><FormControl><Input placeholder="Contoh: Budi Sanjaya" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="school" render={({ field }) => (
+                        <FormItem><FormLabel>Asal Sekolah</FormLabel><FormControl><Input placeholder="Contoh: SMA Negeri 1 Jakarta" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    </CardContent>
+                </Card>
+            )}
 
-              {/* Personal Data Tab */}
-              <TabsContent value="personal" className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="namaLengkap">Nama Lengkap</Label>
-                  <Input
-                    id="namaLengkap"
-                    value={formData.namaLengkap}
-                    onChange={(e) => handleChange("namaLengkap", e.target.value)}
-                    placeholder="Masukkan nama lengkap"
-                    required
-                  />
+            {currentStep === 1 && (
+                <div className="space-y-8">
+                <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><HeartPulse className="h-5 w-5" />Minat Kamu</CardTitle><CardDescription>Pilih bidang-bidang yang membuatmu bersemangat.</CardDescription></CardHeader>
+                    <CardContent>
+                        <FormField control={form.control} name="minat" render={({ field }) => (
+                            <FormItem><div className="grid grid-cols-2 md:grid-cols-3 gap-4">{minatItems.map((item) => (
+                                <FormItem key={item.id} className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => (checked ? field.onChange([...field.value, item.id]) : field.onChange(field.value?.filter((v) => v !== item.id)))}/></FormControl>
+                                <FormLabel className="font-normal flex items-center gap-2">{item.icon} {item.label}</FormLabel>
+                                </FormItem>))}</div><FormMessage /></FormItem>)}/>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><BrainCircuit className="h-5 w-5" />Kekuatan & Kemampuan</CardTitle><CardDescription>Apa saja keahlian yang paling kamu andalkan?</CardDescription></CardHeader>
+                    <CardContent>
+                        <FormField control={form.control} name="kemampuan" render={({ field }) => (
+                            <FormItem><div className="grid grid-cols-2 md:grid-cols-3 gap-4">{kemampuanItems.map((item) => (
+                                <FormItem key={item.id} className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => (checked ? field.onChange([...field.value, item.id]) : field.onChange(field.value?.filter((v) => v !== item.id)))}/></FormControl>
+                                <FormLabel className="font-normal flex items-center gap-2">{item.icon} {item.label}</FormLabel>
+                                </FormItem>))}</div><FormMessage /></FormItem>)}/>
+                    </CardContent>
+                </Card>
                 </div>
+            )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="umur">Umur</Label>
-                    <Input
-                      id="umur"
-                      type="number"
-                      min="15"
-                      max="25"
-                      value={formData.umur}
-                      onChange={(e) => handleChange("umur", e.target.value)}
-                      placeholder="15-25 tahun"
-                      required
-                    />
-                  </div>
+             {currentStep === 2 && (
+                <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><GraduationCap className="h-5 w-5"/>Nilai Akademik</CardTitle><CardDescription>Masukkan nilai rata-rata rapormu (skala 0-100).</CardDescription></CardHeader>
+                    <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">{stepFields[2].map(key => (
+                        <FormField key={key} control={form.control} name={key as any} render={({ field }) => (
+                            <FormItem><FormLabel className="capitalize">{key.replace('nilai_', '').replace('_', ' ')}</FormLabel><FormControl><Input type="number" min="0" max="100" {...field} /></FormControl><FormMessage/></FormItem>
+                        )} />
+                    ))}</CardContent>
+                </Card>
+             )}
 
-                  <div className="space-y-2">
-                    <Label>Jenis Kelamin</Label>
-                    <RadioGroup
-                      value={formData.jenisKelamin}
-                      onValueChange={(value) => handleChange("jenisKelamin", value)}
-                      className="flex space-x-4"
-                      required
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Pria" id="pria" />
-                        <Label htmlFor="pria">Pria</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Wanita" id="wanita" />
-                        <Label htmlFor="wanita">Wanita</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
+            {currentStep === 3 && (
+                <div className="space-y-8">
+                <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><Users2 className="h-5 w-5" />Preferensi</CardTitle><CardDescription>Pilih lingkungan dan cara belajar yang paling kamu sukai.</CardDescription></CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <FormField control={form.control} name="lingkungan_kerja" render={({ field }) => (
+                        <FormItem className="space-y-3"><FormLabel><strong>Lingkungan Kerja Ideal</strong></FormLabel><FormControl>
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="kantor" /></FormControl><FormLabel className="font-normal flex items-center gap-2"><Building className="h-4 w-4"/>Kantor (Struktur)</FormLabel></FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="lapangan" /></FormControl><FormLabel className="font-normal flex items-center gap-2"><Sun className="h-4 w-4"/>Lapangan (Dinamis)</FormLabel></FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="remote" /></FormControl><FormLabel className="font-normal flex items-center gap-2"><Laptop className="h-4 w-4"/>Remote (Fleksibel)</FormLabel></FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="kolaboratif" /></FormControl><FormLabel className="font-normal flex items-center gap-2"><Users className="h-4 w-4"/>Kolaboratif (Tim)</FormLabel></FormItem>
+                        </RadioGroup></FormControl><FormMessage/></FormItem>
+                    )} />
+                    <FormField control={form.control} name="gaya_belajar" render={({ field }) => (
+                        <FormItem className="space-y-3"><FormLabel><strong>Gaya Belajar Dominan</strong></FormLabel><FormControl>
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="visual" /></FormControl><FormLabel className="font-normal flex items-center gap-2"><Eye className="h-4 w-4"/>Visual (Melihat)</FormLabel></FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="auditori" /></FormControl><FormLabel className="font-normal flex items-center gap-2"><Ear className="h-4 w-4"/>Auditori (Mendengar)</FormLabel></FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="kinestetik" /></FormControl><FormLabel className="font-normal flex items-center gap-2"><Hand className="h-4 w-4"/>Kinestetik (Praktik)</FormLabel></FormItem>
+                             <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="logis" /></FormControl><FormLabel className="font-normal flex items-center gap-2"><Brain className="h-4 w-4"/>Logis (Penalaran)</FormLabel></FormItem>
+                        </RadioGroup></FormControl><FormMessage/></FormItem>
+                    )} />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2"><Drama className="h-5 w-5" />Kepribadian & Karakter</CardTitle><CardDescription>Pilih beberapa sifat yang paling menggambarkan dirimu.</CardDescription></CardHeader>
+                    <CardContent>
+                    <FormField control={form.control} name="karakter" render={({ field }) => (
+                        <FormItem><div className="grid grid-cols-2 md:grid-cols-3 gap-4">{karakterItems.map((item) => (
+                           <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                           <FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => (checked ? field.onChange([...field.value, item.id]) : field.onChange(field.value?.filter((v) => v !== item.id)))}/></FormControl>
+                           <FormLabel className="font-normal flex items-center gap-2">{item.icon} {item.label}</FormLabel>
+                           </FormItem>))}</div><FormMessage /></FormItem>)}/>
+                    </CardContent>
+                </Card>
                 </div>
+            )}
+             </motion.div>
+            </AnimatePresence>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sekolahAsal">Sekolah Asal</Label>
-                    <Input
-                      id="sekolahAsal"
-                      value={formData.sekolahAsal}
-                      onChange={(e) => handleChange("sekolahAsal", e.target.value)}
-                      placeholder="Nama sekolah menengah atas"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="kotaAsal">Kota Asal</Label>
-                    <Input
-                      id="kotaAsal"
-                      value={formData.kotaAsal}
-                      onChange={(e) => handleChange("kotaAsal", e.target.value)}
-                      placeholder="Kota tempat tinggal"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <h3 className="text-lg font-medium pt-4">Minat Bidang Studi</h3>
-                <p className="text-sm text-gray-500 mb-4">Pilih bidang studi yang kamu minati:</p>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {interestCards.map((interest) => (
-                    <div
-                      key={interest.id}
-                      className={cn(
-                        "border rounded-lg p-4 cursor-pointer transition-all flex flex-col items-center justify-center gap-2",
-                        selectedInterests.includes(interest.id)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card hover:bg-accent",
-                      )}
-                      onClick={() => handleInterestToggle(interest.id)}
-                    >
-                      {interest.icon}
-                      <span className="font-medium">{interest.label}</span>
-                      {selectedInterests.includes(interest.id) && <Check className="h-4 w-4 absolute top-2 right-2" />}
-                    </div>
-                  ))}
-                </div>
-
-                {selectedInterests.length < 1 && (
-                  <p className="text-sm text-red-500 mt-2">Pilih minimal 1 bidang minat</p>
-                )}
-
-                <div className="space-y-2 mt-6">
-                  <Label htmlFor="preferensiPekerjaan">Preferensi Pekerjaan</Label>
-                  <Select onValueChange={(value) => handleChange("preferensiPekerjaan", value)} required>
-                    <SelectTrigger id="preferensiPekerjaan">
-                      <SelectValue placeholder="Pilih preferensi pekerjaan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Teknis">Teknis</SelectItem>
-                      <SelectItem value="Kreatif">Kreatif</SelectItem>
-                      <SelectItem value="Pelayanan Masyarakat">Pelayanan Masyarakat</SelectItem>
-                      <SelectItem value="Administratif">Administratif</SelectItem>
-                      <SelectItem value="Klinis">Klinis</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="pt-4">
-                  <Button
-                    type="button"
-                    className="w-full"
-                    onClick={goToNextTab}
-                    disabled={selectedInterests.length < 1}
-                  >
-                    Lanjut ke Data Akademik
-                  </Button>
-                </div>
-              </TabsContent>
-
-              {/* Academic Data Tab */}
-              <TabsContent value="academic" className="space-y-6" id="academic-tab">
-                {selectedInterests.length > 0 ? (
-                  <>
-                    {questions.length > 0 ? (
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-medium">
-                            Pertanyaan {currentQuestion + 1} dari {questions.length}
-                          </h3>
-                          <div className="text-sm text-muted-foreground">
-                            {Math.round(((currentQuestion + 1) / questions.length) * 100)}% selesai
-                          </div>
-                        </div>
-
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-6">
-                          <div
-                            className="bg-primary h-2.5 rounded-full"
-                            style={{ width: `${Math.round(((currentQuestion + 1) / questions.length) * 100)}%` }}
-                          ></div>
-                        </div>
-
-                        <div className="p-6 border rounded-lg shadow-sm">
-                          <h4 className="text-xl font-medium mb-4">{questions[currentQuestion].question}</h4>
-
-                          {questions[currentQuestion].type === "number" ? (
-                            <div className="space-y-2">
-                              <Input
-                                type="number"
-                                min="0"
-                                max="100"
-                                value={formData[questions[currentQuestion].field as keyof typeof formData] as string}
-                                onChange={(e) => handleQuestionChange(e.target.value)}
-                                placeholder="0-100"
-                                className="text-lg p-6"
-                                required
-                              />
-                              <p className="text-sm text-muted-foreground">Masukkan nilai antara 0-100</p>
-                            </div>
-                          ) : questions[currentQuestion].type === "select" ? (
-                            <div className="space-y-4">
-                              {questions[currentQuestion].options?.map((option) => (
-                                <div
-                                  key={option.value}
-                                  className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all ${
-                                    formData[questions[currentQuestion].field as keyof typeof formData] === option.value
-                                      ? "bg-primary text-primary-foreground border-primary"
-                                      : "hover:bg-accent"
-                                  }`}
-                                  onClick={() => handleQuestionChange(option.value)}
-                                >
-                                  <span className="text-lg">{option.label}</span>
-                                  {formData[questions[currentQuestion].field as keyof typeof formData] ===
-                                    option.value && <Check className="h-5 w-5 ml-auto" />}
-                                </div>
-                              ))}
-                            </div>
-                          ) : null}
-                        </div>
-
-                        <div className="flex justify-between mt-6">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handlePrevQuestion}
-                            disabled={currentQuestion === 0}
-                          >
-                            Sebelumnya
-                          </Button>
-
-                          {currentQuestion < questions.length - 1 ? (
-                            <Button
-                              type="button"
-                              onClick={handleNextQuestion}
-                              disabled={!formData[questions[currentQuestion].field as keyof typeof formData]}
-                            >
-                              Selanjutnya
-                            </Button>
-                          ) : (
-                            <Button
-                              type="submit"
-                              disabled={!formData[questions[currentQuestion].field as keyof typeof formData]}
-                            >
-                              Lihat Rekomendasi
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-64">
-                        <div className="text-center">
-                          <h3 className="text-lg font-medium mb-2">Memuat pertanyaan...</h3>
-                          <p className="text-muted-foreground">Mohon tunggu sebentar</p>
-                        </div>
-                      </div>
-                    )}
-                  </>
+            <div className="flex justify-between mt-8">
+                <Button type="button" onClick={handlePrev} disabled={currentStep === 0} variant="outline" className="flex items-center gap-2">
+                    <ArrowLeft className="h-4 w-4" /> Kembali
+                </Button>
+                
+                {currentStep < steps.length - 1 ? (
+                    <Button type="button" onClick={handleNext} className="flex items-center gap-2">
+                        Lanjut <ArrowRight className="h-4 w-4" />
+                    </Button>
                 ) : (
-                  <div className="p-8 text-center bg-muted rounded-lg">
-                    <h3 className="text-lg font-medium mb-2">Belum Ada Minat yang Dipilih</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Silakan kembali ke tab Data Pribadi dan pilih minimal satu bidang minat untuk melanjutkan.
-                    </p>
-                    <Button onClick={() => setActiveTab("personal")}>Kembali ke Data Pribadi</Button>
-                  </div>
+                    <Button type="submit" className="bg-green-600 hover:bg-green-700 flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" /> Lihat Rekomendasi
+                    </Button>
                 )}
-              </TabsContent>
-            </Tabs>
-          </form>
-        </CardContent>
-      </Card>
+            </div>
+        </form>
+      </Form>
     </main>
-  )
+  );
 }

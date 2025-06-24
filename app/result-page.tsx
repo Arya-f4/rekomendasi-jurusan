@@ -1,13 +1,13 @@
 "use client"
 
-import { useSearchParams } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { getAllRecommendations, type RecommendationResult } from "../lib/recommendation"
-import { BookOpen, Briefcase, Building, FlaskRoundIcon as Flask, HeartPulse, Scale, CheckCircle2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BookOpen, Briefcase, Building, CheckCircle2, FlaskRoundIcon as Flask, HeartPulse, Scale } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 import { useState } from "react"
+import { getAllRecommendations, type RecommendationResult } from "../lib/recommendation"
 
 export default function ResultPage() {
   const searchParams = useSearchParams()

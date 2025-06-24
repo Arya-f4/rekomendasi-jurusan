@@ -1,91 +1,93 @@
-"use client"
+// app/result/page.tsx
+'use client';
 
-import { useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { getRecommendation } from "@/lib/recommendation"
-import ResultPage from "../result-page"
-export default function Page() {
-  const searchParams = useSearchParams()
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { getRecommendation, RecommendationResult, UserInput } from '@/lib/recommendation';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-  // Extract form data from query parameters
-  const formData = {
-    // Personal Data
-    namaLengkap: searchParams.get("namaLengkap") || "",
-    umur: searchParams.get("umur") || "",
-    jenisKelamin: searchParams.get("jenisKelamin") || "",
-    sekolahAsal: searchParams.get("sekolahAsal") || "",
-    kotaAsal: searchParams.get("kotaAsal") || "",
+function Recommendations() {
+  const searchParams = useSearchParams();
 
-    // Study Interests
-    minatSains: searchParams.get("minatSains") || "",
-    minatTeknologi: searchParams.get("minatTeknologi") || "",
-    minatSosial: searchParams.get("minatSosial") || "",
-    minatHukum: searchParams.get("minatHukum") || "",
-    minatKesehatan: searchParams.get("minatKesehatan") || "",
-    minatSeni: searchParams.get("minatSeni") || "",
-    minatBahasa: searchParams.get("minatBahasa") || "",
-    minatKeuangan: searchParams.get("minatKeuangan") || "",
-    minatMatematika: searchParams.get("minatMatematika") || "",
-    minatDesain: searchParams.get("minatDesain") || "",
-    minatDebat: searchParams.get("minatDebat") || "",
+  // Membangun objek UserInput dari search parameters
+  const userInput: UserInput = {
+    minat: searchParams.get('minat')?.split(',') || [],
+    kemampuan: searchParams.get('kemampuan')?.split(',') || [],
+    nilai_matematika: Number(searchParams.get('nilai_matematika')) || 0,
+    nilai_fisika: Number(searchParams.get('nilai_fisika')) || 0,
+    nilai_kimia: Number(searchParams.get('nilai_kimia')) || 0,
+    nilai_biologi: Number(searchParams.get('nilai_biologi')) || 0,
+    nilai_ekonomi: Number(searchParams.get('nilai_ekonomi')) || 0,
+    nilai_geografi: Number(searchParams.get('nilai_geografi')) || 0,
+    nilai_sosiologi: Number(searchParams.get('nilai_sosiologi')) || 0,
+    nilai_sejarah: Number(searchParams.get('nilai_sejarah')) || 0,
+    nilai_seni: Number(searchParams.get('nilai_seni')) || 0,
+    nilai_bahasa_indonesia: Number(searchParams.get('nilai_bahasa_indonesia')) || 0,
+    nilai_bahasa_inggris: Number(searchParams.get('nilai_bahasa_inggris')) || 0,
+    lingkungan_kerja: searchParams.get('lingkungan_kerja') || '',
+    gaya_belajar: searchParams.get('gaya_belajar') || '',
+    karakter: searchParams.get('karakter')?.split(',') || [],
+  };
 
-    // Academic Scores
-    nilaiMatematika: searchParams.get("nilaiMatematika") || "0",
-    nilaiFisika: searchParams.get("nilaiFisika") || "0",
-    nilaiBiologi: searchParams.get("nilaiBiologi") || "0",
-    nilaiKimia: searchParams.get("nilaiKimia") || "0",
-    nilaiBahasa: searchParams.get("nilaiBahasa") || "0",
-    nilaiSejarah: searchParams.get("nilaiSejarah") || "0",
-    nilaiSosiologi: searchParams.get("nilaiSosiologi") || "0",
-    nilaiEkonomi: searchParams.get("nilaiEkonomi") || "0",
-    nilaiSeni: searchParams.get("nilaiSeni") || "0",
+  // Panggil fungsi rekomendasi yang baru dan sudah disederhanakan
+  const recommendations: RecommendationResult[] = getRecommendation(userInput);
 
-    // Skills
-    kemampuanAnalitis: searchParams.get("kemampuanAnalitis") || "",
-    kemampuanKomunikasi: searchParams.get("kemampuanKomunikasi") || "",
-    kemampuanKreativitas: searchParams.get("kemampuanKreativitas") || "",
-    kemampuanKetelitian: searchParams.get("kemampuanKetelitian") || "",
-    kemampuanSpasial: searchParams.get("kemampuanSpasial") || "",
-    kemampuanMemori: searchParams.get("kemampuanMemori") || "",
-    keterampilanTeknis: searchParams.get("keterampilanTeknis") || "",
-    kemampuanProblemSolving: searchParams.get("kemampuanProblemSolving") || "",
-
-    // Job Preference
-    preferensiPekerjaan: searchParams.get("preferensiPekerjaan") || "",
+  if (recommendations.length === 0) {
+    return (
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold mb-4">Hasil Rekomendasi</h2>
+        <p>Maaf, tidak ada jurusan yang cocok dengan kriteria Anda. Coba ubah pilihan Anda.</p>
+      </div>
+    );
   }
 
-  // Get recommendation based on form data
-  const recommendation = getRecommendation({
-    minatSains: formData.minatSains,
-    minatTeknologi: formData.minatTeknologi,
-    minatSosial: formData.minatSosial,
-    minatKesehatan: formData.minatKesehatan,
-    minatSeni: formData.minatSeni,
-    minatBahasa: formData.minatBahasa,
-    minatKeuangan: formData.minatKeuangan,
-    minatDebat: formData.minatDebat,
-    nilaiMatematika: Number.parseInt(formData.nilaiMatematika),
-    nilaiFisika: Number.parseInt(formData.nilaiFisika),
-    nilaiBiologi: Number.parseInt(formData.nilaiBiologi),
-    nilaiKimia: Number.parseInt(formData.nilaiKimia),
-    nilaiBahasa: Number.parseInt(formData.nilaiBahasa),
-    nilaiSejarah: Number.parseInt(formData.nilaiSejarah),
-    nilaiSosiologi: Number.parseInt(formData.nilaiSosiologi),
-    nilaiEkonomi: Number.parseInt(formData.nilaiEkonomi),
-    nilaiSeni: Number.parseInt(formData.nilaiSeni),
-    kemampuanAnalitis: formData.kemampuanAnalitis,
-    kemampuanKomunikasi: formData.kemampuanKomunikasi,
-    kemampuanKreativitas: formData.kemampuanKreativitas,
-    kemampuanKetelitian: formData.kemampuanKetelitian,
-    kemampuanSpasial: formData.kemampuanSpasial,
-    keterampilanTeknis: formData.keterampilanTeknis,
-    preferensiPekerjaan: formData.preferensiPekerjaan,
-  })
-
   return (
-    <ResultPage/>
-    
-  )
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold tracking-tight">Rekomendasi Jurusan Untukmu</h1>
+        <p className="text-muted-foreground mt-2">
+          Berikut adalah 3 rekomendasi jurusan teratas berdasarkan pilihanmu.
+        </p>
+      </div>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {recommendations.slice(0, 3).map(({ major, score, matchDetails }, index) => (
+          <Card key={major.id} className="flex flex-col">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                  <div>
+                    <Badge variant={index === 0 ? "default" : "secondary"}>
+                      {index === 0 ? 'Pilihan Utama' : `Rekomendasi #${index + 1}`}
+                    </Badge>
+                    <CardTitle className="mt-2">{major.name}</CardTitle>
+                  </div>
+                  <div className="text-3xl font-bold text-blue-600">{score}</div>
+              </div>
+              <CardDescription>{major.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow flex flex-col justify-end">
+                <div>
+                    <p className="text-sm font-medium mb-2">Tingkat Kecocokan:</p>
+                    <Progress value={(matchDetails.matchedCriteria / matchDetails.totalCriteria) * 100} className="w-full" />
+                    <p className="text-xs text-muted-foreground mt-1 text-right">
+                        {matchDetails.matchedCriteria} dari {matchDetails.totalCriteria} kriteria cocok
+                    </p>
+                </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <main className="container mx-auto px-4 py-8">
+      <Suspense fallback={<div className="text-center">Memuat hasil...</div>}>
+        <Recommendations />
+      </Suspense>
+    </main>
+  );
 }
