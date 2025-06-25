@@ -1,37 +1,34 @@
 // app/result/page.tsx
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { getRecommendation, RecommendationResult, UserInput } from '@/lib/recommendation';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+
+// Detail tambahan untuk setiap jurusan (deskripsi, ikon, dll.)
+const majorDetails: { [key: string]: { description: string; icon: string } } = {
+  Teknik: { description: "Bidang yang berfokus pada penerapan ilmu pengetahuan dan teknologi untuk merancang, membangun, dan memelihara mesin, struktur, dan sistem.", icon: "🔬" },
+  Hukum: { description: "Studi tentang sistem aturan yang ditegakkan melalui lembaga sosial untuk mengatur perilaku.", icon: "⚖️" },
+  Kedokteran: { description: "Ilmu dan praktik diagnosis, pengobatan, dan pencegahan penyakit.", icon: "🩺" },
+  Arsitektur: { description: "Seni dan ilmu merancang bangunan dan struktur fisik lainnya.", icon: "🏛️" },
+  Sastra: { description: "Studi tentang karya tulis, terutama yang dianggap memiliki nilai seni atau intelektual.", icon: "📚" },
+  Akuntansi: { description: "Pengukuran, pemrosesan, dan komunikasi informasi keuangan tentang entitas ekonomi.", icon: "💼" },
+};
 
 function Recommendations() {
   const searchParams = useSearchParams();
 
   // Membangun objek UserInput dari search parameters
-  const userInput: UserInput = {
-    minat: searchParams.get('minat')?.split(',') || [],
-    kemampuan: searchParams.get('kemampuan')?.split(',') || [],
-    nilai_matematika: Number(searchParams.get('nilai_matematika')) || 0,
-    nilai_fisika: Number(searchParams.get('nilai_fisika')) || 0,
-    nilai_kimia: Number(searchParams.get('nilai_kimia')) || 0,
-    nilai_biologi: Number(searchParams.get('nilai_biologi')) || 0,
-    nilai_ekonomi: Number(searchParams.get('nilai_ekonomi')) || 0,
-    nilai_geografi: Number(searchParams.get('nilai_geografi')) || 0,
-    nilai_sosiologi: Number(searchParams.get('nilai_sosiologi')) || 0,
-    nilai_sejarah: Number(searchParams.get('nilai_sejarah')) || 0,
-    nilai_seni: Number(searchParams.get('nilai_seni')) || 0,
-    nilai_bahasa_indonesia: Number(searchParams.get('nilai_bahasa_indonesia')) || 0,
-    nilai_bahasa_inggris: Number(searchParams.get('nilai_bahasa_inggris')) || 0,
-    lingkungan_kerja: searchParams.get('lingkungan_kerja') || '',
-    gaya_belajar: searchParams.get('gaya_belajar') || '',
-    karakter: searchParams.get('karakter')?.split(',') || [],
-  };
+  const userInput: UserInput = {};
+  searchParams.forEach((value, key) => {
+      if (key.startsWith('nilai_')) {
+          userInput[key] = Number(value);
+      } else {
+          userInput[key] = value;
+      }
+  });
 
-  // Panggil fungsi rekomendasi yang baru dan sudah disederhanakan
   const recommendations: RecommendationResult[] = getRecommendation(userInput);
 
   if (recommendations.length === 0) {
@@ -48,31 +45,25 @@ function Recommendations() {
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">Rekomendasi Jurusan Untukmu</h1>
         <p className="text-muted-foreground mt-2">
-          Berikut adalah 3 rekomendasi jurusan teratas berdasarkan pilihanmu.
+          Berikut adalah rekomendasi jurusan berdasarkan jawabanmu.
         </p>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {recommendations.slice(0, 3).map(({ major, score, matchDetails }, index) => (
-          <Card key={major.id} className="flex flex-col">
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+        {recommendations.map(({ rekomendasi, alasan }, index) => (
+          <Card key={index} className="flex flex-col">
             <CardHeader>
-              <div className="flex justify-between items-start">
-                  <div>
-                    <Badge variant={index === 0 ? "default" : "secondary"}>
-                      {index === 0 ? 'Pilihan Utama' : `Rekomendasi #${index + 1}`}
-                    </Badge>
-                    <CardTitle className="mt-2">{major.name}</CardTitle>
-                  </div>
-                  <div className="text-3xl font-bold text-blue-600">{score}</div>
+              <div className="flex items-center gap-4">
+                <span className="text-4xl">{majorDetails[rekomendasi]?.icon || '🎓'}</span>
+                <CardTitle>{rekomendasi}</CardTitle>
               </div>
-              <CardDescription>{major.description}</CardDescription>
+              <CardDescription>{majorDetails[rekomendasi]?.description || 'Deskripsi tidak tersedia.'}</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex flex-col justify-end">
+            <CardContent className="flex-grow">
                 <div>
-                    <p className="text-sm font-medium mb-2">Tingkat Kecocokan:</p>
-                    <Progress value={(matchDetails.matchedCriteria / matchDetails.totalCriteria) * 100} className="w-full" />
-                    <p className="text-xs text-muted-foreground mt-1 text-right">
-                        {matchDetails.matchedCriteria} dari {matchDetails.totalCriteria} kriteria cocok
-                    </p>
+                    <p className="text-sm font-medium mb-2">Alasan Rekomendasi:</p>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                        {alasan.map((reason, i) => <li key={i}>{reason}</li>)}
+                    </ul>
                 </div>
             </CardContent>
           </Card>

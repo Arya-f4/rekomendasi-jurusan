@@ -1,273 +1,181 @@
 // lib/recommendation.ts
 
 /**
- * File ini berisi logika inti untuk sistem pakar rekomendasi jurusan.
- * Logika ini menggunakan metode forward chaining sederhana.
- *
- * Prosesnya adalah sebagai berikut:
- * 1. Menerima input dari pengguna (fakta awal).
- * 2. Menyiapkan basis pengetahuan (daftar jurusan beserta kriterianya).
- * 3. Mesin inferensi (inference engine) akan mencocokkan fakta dari pengguna dengan
- * kriteria pada setiap jurusan.
- * 4. Setiap kecocokan akan menambah skor untuk jurusan tersebut.
- * 5. Hasilnya adalah daftar jurusan yang diurutkan berdasarkan skor tertinggi.
+ * Representasi Fakta dalam sistem pakar.
+ * Contoh: { 'nilai_matematika': 85 } atau { 'cocok_bidang_sains': 'ya' }
  */
-
-// Tipe data untuk input pengguna
-export interface UserInput {
-  minat: string[];
-  kemampuan: string[];
-  nilai_matematika: number;
-  nilai_fisika: number;
-  nilai_kimia: number;
-  nilai_biologi: number;
-  nilai_ekonomi: number;
-  nilai_geografi: number;
-  nilai_sosiologi: number;
-  nilai_sejarah: number;
-  nilai_seni: number;
-  nilai_bahasa_indonesia: number;
-  nilai_bahasa_inggris: number;
-  lingkungan_kerja: string;
-  gaya_belajar: string;
-  karakter: string[];
+interface Fact {
+  [key: string]: number | string;
 }
-
-// Tipe data untuk kriteria setiap jurusan
-interface MajorCriteria {
-  minat: string[];
-  kemampuan: string[];
-  // Nilai minimum yang direkomendasikan untuk jurusan ini
-  nilai_matematika?: number;
-  nilai_fisika?: number;
-  nilai_kimia?: number;
-  nilai_biologi?: number;
-  nilai_ekonomi?: number;
-  nilai_geografi?: number;
-  nilai_sosiologi?: number;
-  nilai_sejarah?: number;
-  nilai_seni?: number;
-  nilai_bahasa_indonesia?: number;
-  nilai_bahasa_inggris?: number;
-  lingkungan_kerja?: string[];
-  gaya_belajar?: string[];
-  karakter?: string[];
-}
-
-// Tipe data untuk struktur data jurusan
-export interface Major {
-  id: string;
-  name: string;
-  description: string;
-  criteria: MajorCriteria;
-}
-
-// Tipe data untuk hasil rekomendasi
-export interface RecommendationResult {
-  major: Major;
-  score: number;
-  matchDetails: {
-    matchedCriteria: number;
-    totalCriteria: number;
-  };
-}
-
-// Basis Pengetahuan (Knowledge Base) - Daftar semua jurusan dan kriterianya
-const majors: Major[] = [
-  {
-    id: "if",
-    name: "Teknik Informatika",
-    description: "Jurusan yang berfokus pada pengembangan perangkat lunak, kecerdasan buatan, dan jaringan komputer.",
-    criteria: {
-      minat: ["teknologi", "pemrograman", "analisis", "logika"],
-      kemampuan: ["pemecahan_masalah", "berpikir_kritis", "matematika"],
-      nilai_matematika: 85,
-      nilai_fisika: 80,
-      nilai_bahasa_inggris: 80,
-      lingkungan_kerja: ["kantor", "remote"],
-      gaya_belajar: ["visual", "logis"],
-      karakter: ["tekun", "rasional", "kreatif"],
-    },
-  },
-  {
-    id: "si",
-    name: "Sistem Informasi",
-    description: "Jurusan yang menjembatani antara ilmu komputer dengan bisnis dan manajemen.",
-    criteria: {
-      minat: ["teknologi", "bisnis", "manajemen", "analisis"],
-      kemampuan: ["pemecahan_masalah", "komunikasi", "manajerial"],
-      nilai_matematika: 80,
-      nilai_ekonomi: 80,
-      nilai_bahasa_inggris: 85,
-      lingkungan_kerja: ["kantor", "kolaboratif"],
-      gaya_belajar: ["auditori", "sosial"],
-      karakter: ["terorganisir", "komunikatif", "analitis"],
-    },
-  },
-  {
-    id: "dkv",
-    name: "Desain Komunikasi Visual",
-    description: "Jurusan yang berfokus pada komunikasi visual melalui media seperti grafis, video, dan animasi.",
-    criteria: {
-      minat: ["seni", "kreativitas", "visual"],
-      kemampuan: ["menggambar", "desain_grafis", "imajinasi"],
-      nilai_seni: 85,
-      nilai_bahasa_indonesia: 80,
-      lingkungan_kerja: ["kantor", "freelance", "studio"],
-      gaya_belajar: ["visual", "kinestetik"],
-      karakter: ["kreatif", "imajinatif", "detail"],
-    },
-  },
-  {
-    id: "ak",
-    name: "Akuntansi",
-    description: "Jurusan yang mempelajari pencatatan, pelaporan, dan analisis keuangan.",
-    criteria: {
-      minat: ["bisnis", "keuangan", "angka", "analisis"],
-      kemampuan: ["ketelitian", "matematika", "organisasi"],
-      nilai_ekonomi: 85,
-      nilai_matematika: 85,
-      lingkungan_kerja: ["kantor"],
-      gaya_belajar: ["logis", "soliter"],
-      karakter: ["teliti", "jujur", "terorganisir"],
-    },
-  },
-  {
-    id: "mn",
-    name: "Manajemen",
-    description: "Jurusan yang mempelajari perencanaan, pengelolaan, dan pengorganisasian sumber daya perusahaan.",
-    criteria: {
-      minat: ["bisnis", "kepemimpinan", "strategi"],
-      kemampuan: ["manajerial", "komunikasi", "pemecahan_masalah"],
-      nilai_ekonomi: 85,
-      nilai_sosiologi: 80,
-      nilai_bahasa_inggris: 80,
-      lingkungan_kerja: ["kantor", "kolaboratif"],
-      gaya_belajar: ["sosial", "auditori"],
-      karakter: ["pemimpin", "komunikatif", "strategis"],
-    },
-  },
-    {
-    id: "hk",
-    name: "Hukum",
-    description: "Mempelajari sistem hukum yang berkaitan dengan kehidupan kemasyarakatan.",
-    criteria: {
-      minat: ["sosial", "keadilan", "analisis"],
-      kemampuan: ["berpikir_kritis", "komunikasi", "negosiasi"],
-      nilai_sejarah: 85,
-      nilai_sosiologi: 85,
-      nilai_bahasa_indonesia: 85,
-      lingkungan_kerja: ["kantor", "lapangan"],
-      gaya_belajar: ["verbal", "logis"],
-      karakter: ["analitis", "jujur", "kritis"],
-    },
-  },
-  {
-    id: "psi",
-    name: "Psikologi",
-    description: "Mempelajari perilaku dan proses mental manusia.",
-    criteria: {
-      minat: ["sosial", "kesehatan_mental", "analisis"],
-      kemampuan: ["empati", "komunikasi", "pemecahan_masalah"],
-      nilai_biologi: 80,
-      nilai_sosiologi: 85,
-      nilai_bahasa_indonesia: 80,
-      lingkungan_kerja: ["kantor", "klinik", "sekolah"],
-      gaya_belajar: ["sosial", "verbal"],
-      karakter: ["empatik", "pendengar_baik", "analitis"],
-    },
-  },
-  // Tambahkan jurusan lain di sini dengan format yang sama
-];
 
 /**
- * Mesin Inferensi (Inference Engine)
- * Fungsi utama untuk menghitung rekomendasi berdasarkan input pengguna.
- * Ini adalah implementasi dari forward chaining.
- * @param userInput - Objek yang berisi semua jawaban dari pengguna.
- * @returns Array hasil rekomendasi yang sudah diurutkan.
+ * Struktur Aturan Forward Chaining.
  */
+interface Rule {
+  id: string;
+  antecedent: (facts: Fact) => boolean;
+  consequent: Fact;
+  description: string; // Deskripsi untuk menjelaskan aturan
+}
+
+// Kumpulan Aturan (Rule Base) dengan deskripsi
+const rules: Rule[] = [
+    {
+        id: 'R1',
+        antecedent: (facts) => (facts['nilai_matematika'] as number) >= 80 && (facts['nilai_fisika'] as number) >= 80,
+        consequent: { cocok_bidang_sains: 'ya' },
+        description: "Nilai Matematika dan Fisika tinggi menunjukkan kecocokan dengan bidang sains.",
+    },
+    {
+        id: 'R2',
+        antecedent: (facts) => (facts['nilai_matematika'] as number) >= 75 && (facts['nilai_fisika'] as number) >= 75,
+        consequent: { cocok_bidang_teknis: 'ya' },
+        description: "Nilai Matematika dan Fisika yang baik menunjukkan potensi di bidang teknis.",
+    },
+    {
+        id: 'R3',
+        antecedent: (facts) => facts['cocok_bidang_sains'] === 'ya' && facts['cocok_bidang_teknis'] === 'ya' && facts['preferensi_pekerjaan_teknis'] === 'ya',
+        consequent: { rekomendasi: 'Teknik' },
+        description: "Kecocokan di bidang sains, teknis, dan minat pada pekerjaan teknis merekomendasikan jurusan Teknik.",
+    },
+    {
+        id: 'R4',
+        antecedent: (facts) => (facts['nilai_sejarah'] as number) >= 75 && (facts['nilai_sosiologi'] as number) >= 75,
+        consequent: { cocok_bidang_sosial: 'ya' },
+        description: "Nilai Sejarah dan Sosiologi yang baik menunjukkan kecocokan dengan bidang sosial.",
+    },
+    {
+        id: 'R5',
+        antecedent: (facts) => (facts['nilai_bahasa'] as number) >= 80 && (facts['nilai_sosiologi'] as number) >= 75,
+        consequent: { cocok_bidang_hukum: 'ya' },
+        description: "Kemampuan bahasa dan pemahaman sosiologi adalah dasar untuk studi hukum.",
+    },
+    {
+        id: 'R6',
+        antecedent: (facts) => facts['cocok_bidang_sosial'] === 'ya' && facts['cocok_bidang_hukum'] === 'ya' && facts['preferensi_pekerjaan_administratif'] === 'ya',
+        consequent: { rekomendasi: 'Hukum' },
+        description: "Kecocokan di bidang sosial, hukum, dan minat pada administrasi merekomendasikan jurusan Hukum.",
+    },
+    {
+        id: 'R7',
+        antecedent: (facts) => (facts['nilai_biologi'] as number) >= 80 && (facts['nilai_kimia'] as number) >= 80,
+        consequent: { cocok_bidang_kesehatan: 'ya' },
+        description: "Nilai Biologi dan Kimia yang tinggi adalah fondasi utama bidang kesehatan.",
+    },
+    {
+        id: 'R8',
+        antecedent: (facts) => (facts['nilai_biologi'] as number) >= 75 && (facts['nilai_kimia'] as number) >= 75,
+        consequent: { cocok_bidang_klinis: 'ya' },
+        description: "Nilai Biologi dan Kimia yang baik mendukung studi di bidang klinis.",
+    },
+    {
+        id: 'R9',
+        antecedent: (facts) => facts['cocok_bidang_kesehatan'] === 'ya' && facts['cocok_bidang_klinis'] === 'ya' && facts['preferensi_pelayanan_masyarakat'] === 'ya',
+        consequent: { rekomendasi: 'Kedokteran' },
+        description: "Kecocokan di bidang kesehatan, klinis, dan minat pelayanan masyarakat merekomendasikan jurusan Kedokteran.",
+    },
+    {
+        id: 'R10',
+        antecedent: (facts) => (facts['nilai_seni'] as number) >= 75 && (facts['nilai_matematika'] as number) >= 75,
+        consequent: { cocok_bidang_seni: 'ya' },
+        description: "Kombinasi nilai Seni dan Matematika menunjukkan potensi di bidang seni terstruktur.",
+    },
+    {
+        id: 'R11',
+        antecedent: (facts) => (facts['nilai_seni'] as number) >= 75 && (facts['nilai_fisika'] as number) >= 70,
+        consequent: { cocok_bidang_desain: 'ya' },
+        description: "Kombinasi nilai Seni dan Fisika mendukung pemahaman ruang dan bentuk dalam desain.",
+    },
+    {
+        id: 'R12',
+        antecedent: (facts) => facts['cocok_bidang_seni'] === 'ya' && facts['cocok_bidang_desain'] === 'ya' && facts['preferensi_pekerjaan_kreatif'] === 'ya',
+        consequent: { rekomendasi: 'Arsitektur' },
+        description: "Kecocokan di bidang seni, desain, dan minat pada pekerjaan kreatif merekomendasikan jurusan Arsitektur.",
+    },
+    {
+        id: 'R13',
+        antecedent: (facts) => (facts['nilai_bahasa'] as number) >= 80 && (facts['nilai_sejarah'] as number) >= 75,
+        consequent: { cocok_bidang_bahasa: 'ya' },
+        description: "Nilai Bahasa dan Sejarah yang kuat adalah dasar untuk studi Sastra.",
+    },
+    {
+        id: 'R14',
+        antecedent: (facts) => (facts['nilai_bahasa'] as number) >= 85 && (facts['nilai_seni'] as number) >= 75,
+        consequent: { cocok_bidang_kreatif: 'ya' },
+        description: "Nilai Bahasa dan Seni yang tinggi menunjukkan potensi besar di bidang kreatif berbasis tulisan.",
+    },
+    {
+        id: 'R15',
+        antecedent: (facts) => facts['cocok_bidang_bahasa'] === 'ya' && facts['cocok_bidang_kreatif'] === 'ya' && facts['preferensi_pekerjaan_kreatif'] === 'ya',
+        consequent: { rekomendasi: 'Sastra' },
+        description: "Kecocokan di bidang bahasa, kreatif, dan minat pada pekerjaan kreatif merekomendasikan jurusan Sastra.",
+    },
+    {
+        id: 'R16',
+        antecedent: (facts) => (facts['nilai_ekonomi'] as number) >= 80 && (facts['nilai_matematika'] as number) >= 75,
+        consequent: { cocok_bidang_keuangan: 'ya' },
+        description: "Nilai Ekonomi dan Matematika yang baik adalah kunci untuk bidang keuangan.",
+    },
+    {
+        id: 'R17',
+        antecedent: (facts) => (facts['nilai_ekonomi'] as number) >= 75 && (facts['nilai_matematika'] as number) >= 80,
+        consequent: { cocok_bidang_analitis: 'ya' },
+        description: "Kombinasi Ekonomi dan Matematika yang kuat menunjukkan kemampuan analitis yang tinggi.",
+    },
+    {
+        id: 'R18',
+        antecedent: (facts) => facts['cocok_bidang_keuangan'] === 'ya' && facts['cocok_bidang_analitis'] === 'ya' && facts['preferensi_pekerjaan_administratif'] === 'ya',
+        consequent: { rekomendasi: 'Akuntansi' },
+        description: "Kecocokan di bidang keuangan, analitis, dan minat administrasi merekomendasikan jurusan Akuntansi.",
+    },
+];
+
+export interface UserInput {
+  [key: string]: string | number;
+}
+
+export interface RecommendationResult {
+  rekomendasi: string;
+  alasan: string[];
+}
+
 export function getRecommendation(userInput: UserInput): RecommendationResult[] {
-  const recommendations: RecommendationResult[] = [];
+  const finalRecommendations = new Map<string, string[]>();
 
-  // Iterasi melalui setiap jurusan dalam basis pengetahuan
-  majors.forEach((major) => {
-    let score = 0;
-    let totalCriteriaCount = 0;
+  // Jalur inferensi terpisah untuk setiap kemungkinan rekomendasi
+  const potentialMajors = ["Teknik", "Hukum", "Kedokteran", "Arsitektur", "Sastra", "Akuntansi"];
 
-    // Aturan 1: Mencocokkan Minat
-    const minatUser = new Set(userInput.minat);
-    const minatJurusan = new Set(major.criteria.minat);
-    totalCriteriaCount += minatJurusan.size;
-    minatUser.forEach((minat) => {
-      if (minatJurusan.has(minat)) {
-        score += 2; // Minat diberi bobot lebih tinggi
-      }
-    });
+  potentialMajors.forEach(majorName => {
+    let facts: Fact = { ...userInput };
+    const appliedRules = new Set<string>();
+    const ruleTrace: string[] = [];
 
-    // Aturan 2: Mencocokkan Kemampuan
-    const kemampuanUser = new Set(userInput.kemampuan);
-    const kemampuanJurusan = new Set(major.criteria.kemampuan);
-    totalCriteriaCount += kemampuanJurusan.size;
-    kemampuanUser.forEach((kemampuan) => {
-      if (kemampuanJurusan.has(kemampuan)) {
-        score += 2; // Kemampuan juga diberi bobot lebih tinggi
-      }
-    });
-    
-    // Aturan 3: Mencocokkan Nilai Mata Pelajaran
-    // Hanya nilai yang didefinisikan dalam kriteria jurusan yang akan diperiksa.
-    // Ini menghilangkan pengecekan parameter yang tidak relevan.
-    Object.keys(major.criteria).forEach((key) => {
-        if (key.startsWith('nilai_')) {
-            totalCriteriaCount++;
-            const majorMinScore = major.criteria[key as keyof MajorCriteria] as number;
-            const userScore = userInput[key as keyof UserInput] as number;
-            if (userScore >= majorMinScore) {
-                score += 1;
+    // Iterasi beberapa kali untuk memastikan semua aturan turunan bisa terpicu (menghindari infinite loop)
+    for (let i = 0; i < rules.length; i++) {
+        let newFactDerived = false;
+        for (const rule of rules) {
+            if (!appliedRules.has(rule.id) && rule.antecedent(facts)) {
+                facts = { ...facts, ...rule.consequent };
+                appliedRules.add(rule.id);
+                ruleTrace.push(rule.description);
+                newFactDerived = true;
+
+                if (facts.rekomendasi === majorName) {
+                    if (!finalRecommendations.has(majorName)) {
+                        finalRecommendations.set(majorName, ruleTrace);
+                    }
+                    // Berhenti mencari untuk jalur ini setelah rekomendasi ditemukan
+                    return; 
+                }
             }
         }
-    });
-
-    // Aturan 4: Mencocokkan Lingkungan Kerja
-    if (major.criteria.lingkungan_kerja && major.criteria.lingkungan_kerja.includes(userInput.lingkungan_kerja)) {
-      score += 1;
-    }
-    if (major.criteria.lingkungan_kerja) totalCriteriaCount += 1;
-
-
-    // Aturan 5: Mencocokkan Gaya Belajar
-    if (major.criteria.gaya_belajar && major.criteria.gaya_belajar.includes(userInput.gaya_belajar)) {
-      score += 1;
-    }
-    if (major.criteria.gaya_belajar) totalCriteriaCount +=1;
-
-
-    // Aturan 6: Mencocokkan Karakter
-    if (major.criteria.karakter) {
-        const karakterUser = new Set(userInput.karakter);
-        const karakterJurusan = new Set(major.criteria.karakter);
-        totalCriteriaCount += karakterJurusan.size;
-        karakterUser.forEach((k) => {
-            if (karakterJurusan.has(k)) {
-                score += 1;
-            }
-        });
-    }
-
-    // Hanya tambahkan jurusan jika memiliki skor > 0 untuk menghindari hasil yang tidak relevan
-    if (score > 0) {
-        recommendations.push({
-            major,
-            score,
-            matchDetails: {
-              matchedCriteria: score, // Disederhanakan, bisa dibuat lebih detail jika perlu
-              totalCriteria: totalCriteriaCount,
-            }
-        });
+        // Jika tidak ada fakta baru yang diturunkan dalam satu iterasi penuh, hentikan
+        if (!newFactDerived) break;
     }
   });
 
-  // Urutkan rekomendasi dari skor tertinggi ke terendah
-  return recommendations.sort((a, b) => b.score - a.score);
+  return Array.from(finalRecommendations.entries()).map(([rekomendasi, alasan]) => ({
+      rekomendasi,
+      alasan,
+  }));
 }
